@@ -1,1 +1,3 @@
 # eval_mt
+
+指标：BLEU, CHRF, CHRF++, TER, BERT-SCORE, METEOR, COMET
