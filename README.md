@@ -16,18 +16,18 @@ pip install "sacrebleu[ja]" "sacrebleu[ko]"
 ## OCR指标
 1. 接受json格式
 ```json
-[
+{
     "en/25/32/en_10101166.jpg": {
         "ref": "ALUSSO\nCRI 80+\nOthers\nCRI 75+",
         "output": "ALUSSO\nCRI 80+\n\nOthers\nCRI 75-"
     },
-]
+}
 ```
 ref 为标准答案，output为模型输出。
 
 也可接受ref为列表形式的json, 但是output都是字符串格式
 ```json
-[
+{
     "OCRMT30K_06269.jpg": {
         "output": "华丰 三鲜伊面\n我们做好面 您可以信赖\n和面用高汤\n蔬菜更加量\n50%",
         "ref": [
@@ -38,7 +38,7 @@ ref 为标准答案，output为模型输出。
             "蔬菜更加量"
         ]
     },
-]
+}
 ```
 
 2. 在代码中替换需要测试的文件夹以及语言
@@ -62,7 +62,7 @@ ref 为标准答案，output为模型输出。
 ## 翻译指标
 1. 接受json格式的翻译结果如下：
 ```json
-[
+{
     "en_194.jpg": {
         "src": "Vacant",
         "ref": "空闲",
@@ -73,7 +73,7 @@ ref 为标准答案，output为模型输出。
         "ref": "海啸\n撤离\n路线",
         "mt": "海啸\n疏散路线\n路线"
     },
-]
+}
 ```
 src为原文，ref为标准答案，mt为模型翻译。拼接用`\n`或空格都行，只要三个文本都用同一种方式就行。
 
