@@ -5,6 +5,8 @@ import pandas as pd
 import os
 import jieba
 import sys
+# import mecab_ko as MeCab_ko
+import MeCab
 
 def eval_ocr(mt_file, lang):
     mt = json.load(open(mt_file, "r"))
@@ -16,6 +18,8 @@ def eval_ocr(mt_file, lang):
     total_fp = 0
     total_fn = 0
     total_ref_words = 0
+    # tagger_ko = MeCab_ko.Tagger("-Owakati")
+    wakati = MeCab.Tagger("-Owakati")
 
     # 遍历所有图片的 OCR 结果
     for img, item in mt.items():
@@ -25,16 +29,43 @@ def eval_ocr(mt_file, lang):
             if type(ocr_ref1) == list:
                 ocr_ref = jieba.cut(" ".join(ocr_ref1), cut_all=False)  # 参考文本（单词分割）列表
             else:
-                raise Exception("Chinese reference should be a list, str not implemented")
-            ocr_mt = jieba.cut(ocr_mt1, cut_all=False)  # 模型输出（单词分割）
+                ocr_ref = jieba.cut(ocr_ref1, cut_all=False)  # 参考文本（单词分割）列表
+            if type(ocr_mt1) == list:
+                ocr_mt = jieba.cut(" ".join(ocr_mt1), cut_all=False)
+            else:
+                ocr_mt = jieba.cut(ocr_mt1, cut_all=False)  # 模型输出（单词分割）
             ocr_ref=list(ocr_ref)
             ocr_mt=list(ocr_mt)
+
+        elif lang == "ko":
+            if type(ocr_ref1) == list:
+                ocr_ref = tagger_ko.parse(" ".join(ocr_ref1)).split()  # 参考文本（单词分割）列表
+            else:
+                ocr_ref = tagger_ko.parse(ocr_ref1).split()  # 参考文本（单词分割）列表
+            if type(ocr_mt1) == list:
+                ocr_mt = tagger_ko.parse(" ".join(ocr_mt1)).split()
+            else:
+                ocr_mt = tagger_ko.parse(ocr_mt1).split()
+
+        elif lang == "ja":
+            if type(ocr_ref1) == list:
+                ocr_ref = wakati.parse(" ".join(ocr_ref1)).split()  # 参考文本（单词分割）列表
+            else:
+                ocr_ref = wakati.parse(ocr_ref1).split()  # 参考文本（单词分割）列表
+            if type(ocr_mt1) == list:
+                ocr_mt = wakati.parse(" ".join(ocr_mt1)).split()
+            else:
+                ocr_mt = wakati.parse(ocr_mt1).split()
+            
         else: # en
             if type(ocr_ref1) == list:
                 ocr_ref = " ".join(ocr_ref1).split()  # 参考文本（单词分割）列表
             else:
                 ocr_ref = ocr_ref1.split()  # 参考文本（单词分割）字符串
-            ocr_mt = ocr_mt1.split()  # 模型输出（单词分割）
+            if type(ocr_mt1) == list:
+                ocr_mt = " ".join(ocr_mt1).split()
+            else:
+                ocr_mt = ocr_mt1.split()  # 模型输出（单词分割）
 
         # 计算 TP, FP, FN
         tp = [word for word in ocr_mt if word in ocr_ref]  # 模型输出正确的单词
@@ -51,8 +82,8 @@ def eval_ocr(mt_file, lang):
 
         # 存储结果
         results[img] = {
-            "ref": item["label"],
-            "mt": item["target"],
+            "ref": item["ref"],
+            "mt": item["output"],
             "TP": tp,
             "FP": fp,
             "FN": fn,
@@ -90,8 +121,15 @@ def eval_ocr(mt_file, lang):
 
 
 if __name__ == "__main__":
-    folders = ["folder1", "folder2"]
-    lang="zh" # zh, en
+    folders = [
+        # "ocr_tool/mit10", 
+        # "ocr_tool/anytrans/en"
+        # "ocr_tool/ocrmt", 
+        # "ocr_tool/anytrans/zh"
+        # "ocr_tool/anytrans/ko"
+        "ocr_tool/anytrans/ja"
+        ]
+    lang="ja" # zh, en
 
     for folder in folders:
         folder = Path(folder)
