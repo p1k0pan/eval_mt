@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import jieba
 import sys
-# import mecab_ko as MeCab_ko
+import mecab_ko as MeCab_ko
 import MeCab
 
 def eval_ocr(mt_file, lang):
@@ -18,7 +18,7 @@ def eval_ocr(mt_file, lang):
     total_fp = 0
     total_fn = 0
     total_ref_words = 0
-    # tagger_ko = MeCab_ko.Tagger("-Owakati")
+    tagger_ko = MeCab_ko.Tagger("-Owakati")
     wakati = MeCab.Tagger("-Owakati")
 
     # 遍历所有图片的 OCR 结果
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         # "ocr_tool/anytrans/ko"
         "ocr_tool/anytrans/ja"
         ]
-    lang="ja" # zh, en
+    lang="ja" # zh, en, ja, ko
 
     for folder in folders:
         folder = Path(folder)

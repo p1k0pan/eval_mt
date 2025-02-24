@@ -11,6 +11,7 @@ pip install jieba bert-score sacrebleu torch pandas unbabel-comet nltk
 其他语象
 ```
 pip install "sacrebleu[ja]" "sacrebleu[ko]"
+pip install unidic-lite
 ```
 
 ## OCR指标
@@ -25,7 +26,7 @@ pip install "sacrebleu[ja]" "sacrebleu[ko]"
 ```
 ref 为标准答案，output为模型输出。
 
-也可接受ref为列表形式的json, 但是output都是字符串格式
+也可接受output或ref为列表形式的json
 ```json
 {
     "OCRMT30K_06269.jpg": {
