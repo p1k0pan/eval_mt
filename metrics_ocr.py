@@ -27,6 +27,7 @@ def eval_ocr(mt_file, lang):
         ocr_mt1 = item["output"]
         if lang == "zh":
             if type(ocr_ref1) == list:
+                ocr_ref1 = [word for word in ocr_ref1 if word != "###"]
                 ocr_ref = jieba.cut(" ".join(ocr_ref1), cut_all=False)  # 参考文本（单词分割）列表
             else:
                 ocr_ref = jieba.cut(ocr_ref1, cut_all=False)  # 参考文本（单词分割）列表
@@ -67,6 +68,8 @@ def eval_ocr(mt_file, lang):
             else:
                 ocr_mt = ocr_mt1.split()  # 模型输出（单词分割）
 
+        ocr_ref = [[x for x in ocr_ref if x not in (' ', '\n')]]
+        ocr_mt = [[x for x in ocr_mt if x not in (' ', '\n')]]
         # 计算 TP, FP, FN
         tp = [word for word in ocr_mt if word in ocr_ref]  # 模型输出正确的单词
         fp = [word for word in ocr_mt if word not in ocr_ref]  # 模型多余的单词
@@ -127,9 +130,11 @@ if __name__ == "__main__":
         # "ocr_tool/ocrmt", 
         # "ocr_tool/anytrans/zh"
         # "ocr_tool/anytrans/ko"
-        "ocr_tool/anytrans/ja"
+        # "ocr_tool/anytrans/ja"
+        # "ocr_tool/lsvt_full"
+        "ocr_tool/icdar2015"
         ]
-    lang="ja" # zh, en, ja, ko
+    lang="en" # zh, en, ja, ko
 
     for folder in folders:
         folder = Path(folder)
