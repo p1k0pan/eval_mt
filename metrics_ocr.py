@@ -68,8 +68,8 @@ def eval_ocr(mt_file, lang):
             else:
                 ocr_mt = ocr_mt1.split()  # 模型输出（单词分割）
 
-        ocr_ref = [[x for x in ocr_ref if x not in (' ', '\n')]]
-        ocr_mt = [[x for x in ocr_mt if x not in (' ', '\n')]]
+        ocr_ref = [x for x in ocr_ref if x not in (' ', '\n')]
+        ocr_mt = [x for x in ocr_mt if x not in (' ', '\n')]
         # 计算 TP, FP, FN
         tp = [word for word in ocr_mt if word in ocr_ref]  # 模型输出正确的单词
         fp = [word for word in ocr_mt if word not in ocr_ref]  # 模型多余的单词
