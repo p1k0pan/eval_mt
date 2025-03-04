@@ -18,6 +18,7 @@ import pandas as pd
 from tqdm import tqdm
 import os
 from comet import download_model, load_from_checkpoint
+from tokenize_multilingual import *
 model_path = download_model("Unbabel/wmt22-comet-da")
 
 # Load the model checkpoint:
@@ -30,30 +31,48 @@ def bleu_score(predict, answer, lang):
            ]
     sys = ['The dog bit the man.', "It wasn't surprising.", 'The man had just bitten him.']
     """
+    tokenize_map = {
+        'zh': "zh",
+        'ja': "ja-mecab",
+        'ko': "ko-mecab",
+        'th': "none",    # 泰语使用 Flores101 分词
+        'ar': "none",     # 阿拉伯语
+        'hi': "none",     # 印地语
+        'ru': "none",            # 俄语专用规则
+        'tr': "none",            # 土耳其语专用规则
+        'de': "intl",            # 德语专用规则
+        'fr': "intl",            # 法语专用规则
+        'es': "intl",            # 西班牙语专用规则
+        'it': "intl",            # 意大利语专用规则
+        'pt': "intl",            # 葡萄牙语专用规则
+    }
     # bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize="flores101")
-    if lang=="zh":
-        bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize="zh")
-    elif lang=="ja":
-        bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize="ja-mecab")
-    elif lang=="ko":
-        bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize="ko-mecab")
-    else:
-        bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize="13a")
+    tokenize = tokenize_map.get(lang, "13a")
+    tokenizer_func = None
+    if lang == "ar":
+        tokenizer_func = tokenize_ar
+    elif lang == "ru":
+        tokenizer_func = tokenize_ru
+    elif lang == "th":
+        tokenizer_func = tokenize_th
+    elif lang == "hi":
+        tokenizer_func = tokenize_hi
+    elif lang == "tr":
+        tokenizer_func = tokenize_tr
+    if tokenizer_func is not None:
+        predict = [" ".join(tokenizer_func(p)) for p in predict]
+        answer = [[" ".join(tokenizer_func(a)) for a in answer[0]]]
+
+    bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize=tokenize)
     return bleu.score
 
 def chrf_score(predict, answer):
     chrf = sacrebleu.corpus_chrf(predict, answer)
     return chrf.score
 
-def chrfppp_score(predict, answer, lang):
-    if lang=="zh":
-        predict2 = [" ".join(jieba.cut(p, cut_all=False)) for p in predict]
-        answer2 = [[" ".join(jieba.cut(a, cut_all=False)) for a in answer[0]]]
-    else:
-        predict2 = predict
-        answer2 = answer
+def chrfppp_score(predict, answer):
     
-    chrfppp = sacrebleu.corpus_chrf(predict2, answer2, word_order=2)
+    chrfppp = sacrebleu.corpus_chrf(predict, answer, word_order=2)
     return chrfppp.score
 
 def ter_score(predict, answer):
@@ -61,30 +80,35 @@ def ter_score(predict, answer):
     return ter.score
 
 def bertscore(predict, answer, lang):
-    if lang=="zh":
-        P, R, F1 = score(predict, answer, model_type = bert_name, device="cuda")
-    elif lang=="ja":
-        P, R, F1 = score(predict, answer, lang="ja", device="cuda")
-    elif lang=="ko":
-        P, R, F1 = score(predict, answer, lang="ko", device="cuda")
-    else: #english
-        P, R, F1 = score(predict, answer, lang="en", device="cuda")
+    P, R, F1 = score(predict, answer, lang=lang, device="cuda")
     return torch.mean(P).item(), torch.mean(R).item(), torch.mean(F1).item()
 
 def meteor(predict, answer, type, lang):
     all_meteor = []
+    if lang == "zh":
+        tokenizer_func = tokenize_zh
+    elif lang == "ar":
+        tokenizer_func = tokenize_ar
+    elif lang == "ru":
+        tokenizer_func = tokenize_ru
+    elif lang == "th":
+        tokenizer_func = tokenize_th
+    elif lang == "hi":
+        tokenizer_func = tokenize_hi
+    elif lang == "tr":
+        tokenizer_func = tokenize_tr
+    elif lang == "ja":
+        tokenizer_func = tokenize_ja
+    elif lang == "ko":
+        tokenizer_func = tokenize_ko
+    else:
+        tokenizer_func = tokenize_default
     for i in range(len(predict)):
-        if lang=="zh":
-            meteor = meteor_score.meteor_score(
-                                [jieba.cut(answer[i], cut_all=False)],
-                                jieba.cut(predict[i], cut_all=False),
-                                )
-        else:
-            meteor = meteor_score.meteor_score(
-                            [tokenizer.tokenize(answer[i])],
-                            tokenizer.tokenize(predict[i]),
-                            )
-        all_meteor.append(meteor)
+        ref_tokens = tokenizer_func(answer[i])
+        hyp_tokens = tokenizer_func(predict[i])
+
+        score_val = meteor_score.meteor_score([ref_tokens], hyp_tokens)
+        all_meteor.append(score_val)
     if type == "total":
         return sum(all_meteor) / len(all_meteor)
     else:
@@ -93,7 +117,7 @@ def meteor(predict, answer, type, lang):
 def cal_total_metrics(predicts, answers, chrf_10, comet_sys_score, lang):
     bs = bleu_score(predicts, [answers], lang)
     cs = chrf_score(predicts, [answers])
-    cspp = chrfppp_score(predicts, [answers], lang)
+    cspp = chrfppp_score(predicts, [answers])
     ts = ter_score(predicts, [answers])
     p, r, f1 = bertscore(predicts, answers, lang)
     m = meteor(predicts, answers, "total", lang)
@@ -121,7 +145,7 @@ def cal_each_metrics(predicts, answers, source, comets, lang, img):
         pred = predicts[i]
         bs = bleu_score([pred], [[ans]], lang) 
         cs = chrf_score([pred], [[ans]])
-        cspp = chrfppp_score([pred], [[ans]], lang)
+        cspp = chrfppp_score([pred], [[ans]])
         if cs<10:
             chrf_10+=1
         ts = ter_score([pred], [[ans]])
@@ -164,13 +188,6 @@ if __name__ == "__main__":
     folders = ["folder1", "folder2"]
     lang = "zh" # zh, en, ko, ja
 
-    if lang=="zh":
-        bert_name = "bert-base-chinese"
-    elif lang=="en":
-        bert_name = "roberta-large" # for english
-    else:
-        bert_name = "bert-base-multilingual-cased"
-    tokenizer = AutoTokenizer.from_pretrained(bert_name)
 
     for folder in folders:
         folder= Path(folder)

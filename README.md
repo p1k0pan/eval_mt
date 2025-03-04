@@ -10,8 +10,11 @@ pip install jieba bert-score sacrebleu torch pandas unbabel-comet nltk
 
 其他语象
 ```
-pip install "sacrebleu[ja]" "sacrebleu[ko]"
-pip install unidic-lite
+pip install "sacrebleu[ja]" "sacrebleu[ko]" mecab-python3 mecab-ko unidic-lite
+pip install pythainlp indic-nlp-library hazm spacy zemberek-python
+
+nltk.download('punkt_tab') 
+python -m spacy download ru_core_news_sm 
 ```
 
 ## OCR指标
@@ -90,3 +93,17 @@ src为原文，ref为标准答案，mt为模型翻译。拼接用`\n`或空格�
 - `orginal_total.csv`：计算的是corpus_bleu
 - `original_each.csv`：每一个图片单独的bleu值
 - `original_each_avg.csv`：计算的是sentence_bleu（每个图片单独算bleu值最后取平均）
+
+## 多语言分词方法
+特殊语言（非空格相隔的语言）在tokenize_multilingual.py，使用的策略分别是
+```
+        'zh': "jieba",
+        'ja': "ja-mecab",
+        'ko': "ko-mecab",
+        'th': "pythainlp",    
+        'ar': "hazm",    
+        'hi': "indic-nlp-library",    
+        'ru': "spacy(ru_core_news_sm)",    
+        'tr': "zemberek-python",    
+```
+安装请参考[安装](#安装)
