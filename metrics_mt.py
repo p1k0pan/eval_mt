@@ -59,13 +59,15 @@ def bleu_score(predict, answer, lang, is_sent=False):
         tokenizer_func = tokenize_hi
     elif lang == "tr":
         tokenizer_func = tokenize_tr
-    if tokenizer_func is not None:
-        predict = [" ".join(tokenizer_func(p)) for p in predict]
-        answer = [[" ".join(tokenizer_func(a)) for a in answer[0]]]
-
     if is_sent:
-        bleu = sacrebleu.sentence_bleu(predict, answer, lowercase=True, tokenize=tokenize)
+        if tokenizer_func is not None:
+            predict = " ".join(tokenizer_func(predict))
+            answer = " ".join(tokenizer_func(answer))
+        bleu = sacrebleu.sentence_bleu(predict, [answer], lowercase=True, tokenize=tokenize)
     else:
+        if tokenizer_func is not None:
+            predict = [" ".join(tokenizer_func(p)) for p in predict]
+            answer = [[" ".join(tokenizer_func(a)) for a in answer[0]]]
         bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize=tokenize)
     return bleu.score
 
@@ -146,7 +148,7 @@ def cal_each_metrics(predicts, answers, source, comets, lang, img):
     for i in tqdm(range(len(predicts))):
         ans= answers[i]
         pred = predicts[i]
-        bs = bleu_score(pred, [ans], lang, is_sent=True) 
+        bs = bleu_score(pred, ans, lang, is_sent=True) 
         cs = chrf_score([pred], [[ans]])
         cspp = chrfppp_score([pred], [[ans]])
         if cs<10:
