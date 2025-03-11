@@ -24,7 +24,7 @@ model_path = download_model("Unbabel/wmt22-comet-da")
 # Load the model checkpoint:
 comet_model = load_from_checkpoint(model_path)
 
-def bleu_score(predict, answer, lang):
+def bleu_score(predict, answer, lang, is_sent=False):
     """
     refs = [ 
              ['The dog bit the man.', 'It was not unexpected.', 'The man bit him first.'], 
@@ -63,7 +63,10 @@ def bleu_score(predict, answer, lang):
         predict = [" ".join(tokenizer_func(p)) for p in predict]
         answer = [[" ".join(tokenizer_func(a)) for a in answer[0]]]
 
-    bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize=tokenize)
+    if is_sent:
+        bleu = sacrebleu.sentence_bleu(predict, answer, lowercase=True, tokenize=tokenize)
+    else:
+        bleu = sacrebleu.corpus_bleu(predict, answer, lowercase=True, tokenize=tokenize)
     return bleu.score
 
 def chrf_score(predict, answer):
@@ -115,7 +118,7 @@ def meteor(predict, answer, type, lang):
         return all_meteor[0]
 
 def cal_total_metrics(predicts, answers, chrf_10, comet_sys_score, lang):
-    bs = bleu_score(predicts, [answers], lang)
+    bs = bleu_score(predicts, [answers], lang, is_sent=False)
     cs = chrf_score(predicts, [answers])
     cspp = chrfppp_score(predicts, [answers])
     ts = ter_score(predicts, [answers])
@@ -143,7 +146,7 @@ def cal_each_metrics(predicts, answers, source, comets, lang, img):
     for i in tqdm(range(len(predicts))):
         ans= answers[i]
         pred = predicts[i]
-        bs = bleu_score([pred], [[ans]], lang) 
+        bs = bleu_score([pred], [[ans]], lang, is_sent=True) 
         cs = chrf_score([pred], [[ans]])
         cspp = chrfppp_score([pred], [[ans]])
         if cs<10:
