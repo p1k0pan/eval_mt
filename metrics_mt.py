@@ -146,7 +146,7 @@ def cal_each_metrics(predicts, answers, source, comets, lang, img):
     for i in tqdm(range(len(predicts))):
         ans= answers[i]
         pred = predicts[i]
-        bs = bleu_score([pred], [[ans]], lang, is_sent=True) 
+        bs = bleu_score(pred, [ans], lang, is_sent=True) 
         cs = chrf_score([pred], [[ans]])
         cspp = chrfppp_score([pred], [[ans]])
         if cs<10:
